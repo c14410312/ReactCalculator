@@ -1,32 +1,46 @@
+
 import {Observable} from 'rxjs/Rx';
+import '../css/style.css';
 
-//now an object
-let counter = {value: 0};
+let calcEquation = "";
+let eq = document.getElementById('equation');
+let len = calcEquation.length;
 
-//functions that increment, decrement and reset the counter 
-const inc = acc => ({value: acc.value + 1});
-const dec = acc => ({value: acc.value - 1});
-const res = acc => ({value: 0});
+const ops = ['*', '/', '-', '+','(',')'];
 
-const display = document.getElementById('display');
-const incButton = document.getElementById('increment');
-const decButton = document.getElementById('decrement');
-const resButton = document.getElementById('reset');
 
-//observe events on the buttons
-//getting and observable from click events related to Buttons
-//merge can take a merge of existing streams
-//scan is operating on all the buttons
+//get all the buttons attached to the calculator
+const buttons = document.getElementsByClassName("flex-item");
 
-// mapto maps the click events to each of the functions specified in mapTo(X)
-const button$ = Observable.merge(
-	Observable.fromEvent(incButton, 'click').mapTo(inc),
-	Observable.fromEvent(decButton, 'click').mapTo(dec),
-	Observable.fromEvent(resButton, 'click').mapTo(res)
-)
+//now we need to create a stream
+const $input = Observable.from(buttons)
+.map(button => Observable.fromEvent(button, "click").mapTo(button.textContent))
+.mergeAll().merge(Observable.fromEvent)
+.merge(Observable.fromEvent(document, 'keypress').pluck('key'));
 
-button$
-	.scan((acc, update) => update(acc), counter)
-	.subscribe(counter => {
-	display.innerHTML = counter.value;
-});
+$input.subscribe(key => {
+	
+	if(key === 'C'){
+		eq.value="";
+  		calcEquation = "";
+	}else if(key === '='){
+		try{
+			let res = eval(calcEquation);
+		    eq.value=res;
+		}catch(err){
+		    document.getElementById('equation').value="Syntax Error";
+		}
+		calcEquation="";
+	}else if(isNaN(key) === false || ops.includes(key)) {
+
+		if(ops.indexOf(calcEquation[len - 1]) === -1){
+   			calcEquation += key;
+   			eq.value = calcEquation; 
+  		}
+  		else if(ops.indexOf(calcEquation[len - 1]) >= 0 && ops.indexOf(key) === -1){
+    		calcEquation += key;
+    		eq.value = calcEquation; 
+  		}
+
+	}
+})
